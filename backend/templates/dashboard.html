@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Traffic Dashboard | Multi-Road Intersection</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Original styles (unchanged) */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-weight: 600;
+            margin: 0;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: none;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .metric-card {
+            text-align: center;
+            padding: 1.5rem;
+            background: white;
+            height: 100%;
+        }
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        .metric-label {
+            font-size: 1rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ambulance-detected {
+            background-color: #dc3545;
+            color: white;
+        }
+        .ambulance-not-detected {
+            background-color: #28a745;
+            color: white;
+        }
+        .road-selected {
+            border: 3px solid #0d6efd;
+            box-shadow: 0 0 15px rgba(13,110,253,0.5);
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        #results {
+            display: none;
+            margin-top: 2rem;
+        }
+        .upload-area {
+            border: 2px dashed #0d6efd;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            background-color: #e7f1ff;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            margin-bottom: 1rem;
+        }
+        .upload-area:hover {
+            background-color: #d4e3ff;
+            border-color: #0b5ed7;
+        }
+        .upload-area i {
+            font-size: 2rem;
+            color: #0d6efd;
+        }
+        .file-name {
+            margin-top: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .btn-primary {
+            padding: 0.85rem 2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(13,110,253,0.15);
+        }
+        .road-input {
+            background-color: #ffffff;
+            padding: 1.2rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #eef2ff;
+        }
+        .road-input h5 {
+            font-size: 1.05rem;
+        }
+        .road-map {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .road-map-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+        .road-preview {
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 2px solid #d7e5ff;
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #0d6efd;
+        }
+        .road-preview.active {
+            border-color: #0b5ed7;
+            box-shadow: 0 12px 25px rgba(13,110,253,0.18);
+            background: #e7f1ff;
+        }
+        .road-preview small {
+            color: #6c757d;
+            display: block;
+            margin-top: 0.4rem;
+        }
+        .summary-card {
+            border-radius: 1rem;
+            border: 1px solid #e7f1ff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            background: white;
+            padding: 1.5rem;
+            height: 100%;
+        }
+        .summary-card h6 {
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .summary-card p {
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+        footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            color: #6c757d;
+            text-align: center;
+        }
+        .road-header {
+            background-color: #e9ecef;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem 0.75rem 0 0;
+            font-weight: 600;
+        }
+
+        /* --- New styles for login overlay & language switcher --- */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #0d6efd;
+        }
+        .login-card input {
+            margin-bottom: 1rem;
+            border-radius: 2rem;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid #ced4da;
+        }
+        .login-card button {
+            width: 100%;
+            border-radius: 2rem;
+            padding: 0.75rem;
+            font-weight: 600;
+        }
+        #languageSwitcher {
+            position: fixed;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .lang-btn {
+            border: none;
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+        .lang-btn.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .lang-btn:hover {
+            background: #0d6efd;
+            color: white;
+        }
+        /* Ensure dashboard is hidden until login */
+        #dashboard {
+            display: none;
+        }
+        /* Small adjustment for road inputs container */
+        #roadInputsContainer {
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Overlay (initially visible) -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <h2 data-i18n="adminLogin">Administrator Login</h2>
+            <input type="text" id="adminId" class="form-control" placeholder="ID" data-i18n="idPlaceholder">
+            <input type="password" id="adminPass" class="form-control" placeholder="Password" data-i18n="passPlaceholder">
+            <input type="text" id="trafficSysId" class="form-control" placeholder="Traffic System ID / Road" data-i18n="sysIdPlaceholder">
+            <button class="btn btn-primary" onclick="login()" data-i18n="loginBtn">Connect</button>
+            <div id="loginError" class="text-danger text-center mt-2" style="display: none;">Invalid credentials</div>
+        </div>
+    </div>
+
+    <!-- Language Switcher (visible after login) -->
+    <div id="languageSwitcher" style="display: none;">
+        <button class="lang-btn active" onclick="changeLanguage('en', event)">EN</button>
+        <button class="lang-btn" onclick="changeLanguage('hi', event)">हिं</button>
+        <button class="lang-btn" onclick="changeLanguage('bn', event)">বাং</button>
+        <button class="lang-btn" onclick="changeLanguage('ta', event)">த</button>
+        <button class="lang-btn" onclick="changeLanguage('te', event)">తె</button>
+        <button class="lang-btn" onclick="changeLanguage('kn', event)">ಕ</button>
+        <button class="lang-btn" onclick="changeLanguage('ml', event)">മ</button>
+        <button class="lang-btn" onclick="changeLanguage('mr', event)">मर</button>
+    </div>
+
+    <!-- Main Dashboard (hidden until login) -->
+    <div id="dashboard">
+        <div class="header">
+            <div class="container text-center">
+                <h1 data-i18n="dashboardTitle">🚦 Smart Traffic Control System</h1>
+                <p class="lead mb-0" data-i18n="dashboardSub">Multi‑Road Intersection with Ambulance Priority</p>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- System Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="badge bg-success status-badge" data-i18n="statusOperational">🟢 System Operational</span>
+                                <span class="ms-2 text-muted" data-i18n="version">Version 3.1 (Multi‑Road)</span>
+                            </div>
+                            <div>
+                                <small class="text-muted" data-i18n="temporalConf">Temporal confirmation enabled</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration & Upload Section -->
+            <div class="row">
+                <div class="col-lg-10 mx-auto">
+                    <div class="card p-4">
+                        <h4 class="mb-3" data-i18n="intersectionConfig">🚧 Intersection Configuration</h4>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="roadCount" class="form-label fw-bold" data-i18n="numRoadsLabel">Number of Roads (1‑4)</label>
+                                <select class="form-select" id="roadCount" onchange="updateRoadInputs()">
+                                    <option value="1" data-i18n="roadCountOption1">1 Road</option>
+                                    <option value="2" selected data-i18n="roadCountOption2">2 Roads</option>
+                                    <option value="3" data-i18n="roadCountOption3">3 Roads</option>
+                                    <option value="4" data-i18n="roadCountOption4">4 Roads</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <small class="text-muted" data-i18n="uploadHint">Upload one video per road. Order corresponds to road ID.</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="alert alert-info rounded-4" role="alert">
+                                    <strong data-i18n="roadPreviewLabel">Live lane feed</strong>
+                                    <div class="small" data-i18n="roadLayoutInfo">Road preview layout: uploaded videos align to active roads.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="roadPreviewContainer" class="road-map"></div>
+
+                        <div id="roadInputsContainer">
+                            <!-- Dynamically generated file inputs for each road -->
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeIntersection()" data-i18n="analyzeBtn">Analyze Intersection</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden" data-i18n="loading">Loading...</span>
+                </div>
+                <p class="mt-2" data-i18n="analyzing">Analyzing videos... This may take a moment.</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h3 data-i18n="intersectionAnalysis">📊AI Based Recommandation Analysis</h3>
+                    </div>
+                </div>
+
+                <!-- Selected Road & Command -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card p-3 text-center">
+                            <h5 data-i18n="selectedRoadLabel">Selected Road</h5>
+                            <h2 id="selectedRoad" class="display-4">-</h2>
+                            <span class="badge bg-primary" id="selectedMode">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card p-3">
+                            <h5 data-i18n="arduinoCommandLabel">Command Sent to Arduino</h5>
+                            <pre id="arduinoCommand" style="background: #f1f1f1; padding: 1rem; border-radius: 0.5rem;"></pre>
+                            <small id="commandStatus" class="text-muted"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div id="summaryCards" class="row g-4"></div>
+                    </div>
+                </div>
+
+                <!-- Per-Road Results -->
+                <div id="roadsResultsContainer" class="row g-4">
+                    <!-- Dynamically filled per road -->
+                </div>
+
+                <!-- Raw JSON (for debugging) -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card p-3">
+                            <details>
+                                <summary data-i18n="viewRaw">View Raw Response</summary>
+                                <pre id="rawResponse" style="max-height: 300px; overflow: auto; background: #f1f1f1; padding: 1rem; border-radius: 0.5rem;"></pre>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <p data-i18n="footer">© 2025 Smart Traffic Analysis — Multi‑Road Temporal Confirmation v3.1</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // ==================== TRANSLATIONS ====================
+        const translations = {
+            en: {
+                adminLogin: "Administrator Login",
+                idPlaceholder: "ID",
+                passPlaceholder: "Password",
+                sysIdPlaceholder: "Traffic System ID / Road",
+                loginBtn: "Connect",
+                dashboardTitle: "🚦 Smart Traffic Control System",
+                dashboardSub: "Multi‑Road Intersection with Ambulance Priority",
+                statusOperational: "🟢 System Operational",
+                version: "Version 3.1 (Multi‑Road)",
+                temporalConf: "Temporal confirmation enabled",
+                intersectionConfig: "🚧 Intersection Configuration",
+                numRoadsLabel: "Number of Roads (1‑4)",
+                uploadHint: "Upload one video per road. Order corresponds to road ID.",
+                analyzeBtn: "Analyze Intersection",
+                loading: "Loading...",
+                analyzing: "Analyzing videos... This may take a moment.",
+                intersectionAnalysis: "📊 AI Recommandation & Analysis",
+                selectedRoadLabel: "Selected Road",
+                arduinoCommandLabel: "Command Sent to Arduino",
+                viewRaw: "View Raw Response",
+                footer: "© 2025 Smart Traffic Analysis — Multi‑Road Temporal Confirmation v3.1",
+                road: "Road",
+                noData: "No road data available",
+                ambulance: "Ambulance",
+                noAmbulance: "✅ No Ambulance",
+                trafficLevel: "Traffic Level",
+                cars: "Cars",
+                bikes: "Bikes",
+                buses: "Buses",
+                trucks: "Trucks",
+                total: "Total",
+                uploadHintSmall: "Upload video for this road",
+                clickToUpload: "Click or drag to upload",
+                roadPreviewLabel: "Live lane feed",
+                roadLayoutInfo: "Road preview layout: uploaded videos align to active roads.",
+                totalTrafficLabel: "Total Traffic",
+                highestCongestionLabel: "Highest Congested Road",
+                ambulanceStatusLabel: "Ambulance Priority",
+                noAmbulanceLabel: "No ambulance detected",
+                commandSent: "✅ Sent to Arduino",
+                mockMode: "⚠️ Mock mode (no hardware)",
+                roadCountOption1: "1 Road",
+                roadCountOption2: "2 Roads",
+                roadCountOption3: "3 Roads",
+                roadCountOption4: "4 Roads"
+            },
+            ta: {
+                adminLogin: "நிர்வாகி உள்நுழைவு",
+                idPlaceholder: "ஐடி",
+                passPlaceholder: "கடவுச்சொல்",
+                sysIdPlaceholder: "போக்குவரத்து அமைப்பு ஐடி / சாலை",
+                loginBtn: "இணைக்கவும்",
+                dashboardTitle: "🚦 ஸ்மார்ட் போக்குவரத்து கட்டுப்பாட்டு அமைப்பு",
+                dashboardSub: "பல சாலை சந்திப்பு ஆம்புலன்ஸ் முன்னுரிமையுடன்",
+                statusOperational: "🟢 அமைப்பு இயக்கத்தில் உள்ளது",
+                version: "பதிப்பு 3.1 (பல சாலை)",
+                temporalConf: "தற்காலிக உறுதிப்படுத்தல் இயக்கத்தில்",
+                intersectionConfig: "🚧 சந்திப்பு உள்ளமைவு",
+                numRoadsLabel: "சாலைகளின் எண்ணிக்கை (1‑4)",
+                uploadHint: "ஒவ்வொரு சாலைக்கும் ஒரு வீடியோ பதிவேற்றவும். வரிசை சாலை ஐடியை ஒத்துள்ளது.",
+                analyzeBtn: "சந்திப்பை பகுப்பாய்வு செய்யவும்",
+                loading: "ஏற்றப்படுகிறது...",
+                analyzing: "வீடியோக்களை பகுப்பாய்வு செய்கிறது... இது ஒரு கணம் ஆகலாம்.",
+                intersectionAnalysis: "📊 சந்திப்பு பகுப்பாய்வு",
+                selectedRoadLabel: "தேர்ந்தெடுக்கப்பட்ட சாலை",
+                arduinoCommandLabel: "Arduino க்கு அனுப்பப்பட்ட கட்டளை",
+                viewRaw: "மூல பதிலைப் பார்க்கவும்",
+                footer: "© 2025 ஸ்மார்ட் போக்குவரத்து பகுப்பாய்வு — பல சாலை தற்காலிக உறுதிப்படுத்தல் v3.1",
+                road: "சாலை",
+                noData: "சாலை தரவு எதுவும் இல்லை",
+                ambulance: "ஆம்புலன்ஸ்",
+                noAmbulance: "✅ ஆம்புலன்ஸ் இல்லை",
+                trafficLevel: "போக்குவரத்து நிலை",
+                cars: "கார்கள்",
+                bikes: "பைக்குகள்",
+                buses: "பேருந்துகள்",
+                trucks: "டிரக்குகள்",
+                total: "மொத்தம்",
+                uploadHintSmall: "இந்த சாலைக்கு வீடியோ பதிவேற்கவும்",
+                clickToUpload: "கிளிக் செய்து பதிவேற்றவும் அல்லது இழுக்கவும்",
+                roadPreviewLabel: "லைவ் லேன் ஃபீட்",
+                roadLayoutInfo: "சாலை முன்னோட்ட அமைப்பு: பதிவேற்றிய வீடியோக்கள் செயல்பாட்டிலுள்ள சாலைகளுடன் இணைப்பாகும்.",
+                totalTrafficLabel: "மொத்த போக்குவரத்து",
+                highestCongestionLabel: "மிகவும் பரபரப்பான சாலை",
+                ambulanceStatusLabel: "ஆம்புலன்ஸ் முன்னுரிமை",
+                noAmbulanceLabel: "ஏதேனும் ஆம்புலன்ஸ் இல்லை",
+                commandSent: "✅ Arduino க்கு அனுப்பப்பட்டது",
+                mockMode: "⚠️ மாக் மோட் (ஹார்ட்வேர் இல்லை)",
+                roadCountOption1: "1 சாலை",
+                roadCountOption2: "2 சாலைகள்",
+                roadCountOption3: "3 சாலைகள்",
+                roadCountOption4: "4 சாலைகள்"
+            },
+            hi: {
+                adminLogin: "प्रशासक लॉगिन",
+                idPlaceholder: "आईडी",
+                passPlaceholder: "पासवर्ड",
+                sysIdPlaceholder: "ट्रैफिक सिस्टम आईडी / रोड",
+                loginBtn: "कनेक्ट करें",
+                dashboardTitle: "🚦 स्मार्ट ट्रैफिक कंट्रोल सिस्टम",
+                dashboardSub: "एम्बुलेंस प्राथमिकता के साथ मल्टी‑रोड इंटरसेक्शन",
+                statusOperational: "🟢 सिस्टम संचालित है",
+                version: "वर्शन 3.1 (मल्टी‑रोड)",
+                temporalConf: "अस्थायी पुष्टि सक्षम है",
+                intersectionConfig: "🚧 इंटरसेक्शन कॉन्फ़िगरेशन",
+                numRoadsLabel: "सड़कों की संख्या (1‑4)",
+                uploadHint: "प्रत्येक सड़क के लिए एक वीडियो अपलोड करें। क्रम सड़क आईडी से मेल खाता है।",
+                analyzeBtn: "इंटरसेक्शन विश्लेषण",
+                loading: "लोड हो रहा है...",
+                analyzing: "वीडियो का विश्लेषण किया जा रहा है... इसमें कुछ समय लग सकता है।",
+                intersectionAnalysis: "📊 एआई सिफ़ारिश और विश्लेषण",
+                selectedRoadLabel: "चयनित सड़क",
+                arduinoCommandLabel: "Arduino को भेजा गया कमांड",
+                viewRaw: "कच्चा उत्तर देखें",
+                footer: "© 2025 स्मार्ट ट्रैफिक विश्लेषण — मल्टी‑रोड अस्थायी पुष्टि v3.1",
+                road: "सड़क",
+                noData: "कोई सड़क डेटा उपलब्ध नहीं है",
+                ambulance: "एम्बुलेंस",
+                noAmbulance: "✅ कोई एम्बुलेंस नहीं",
+                trafficLevel: "ट्रैफ़िक स्तर",
+                cars: "कारें",
+                bikes: "बाइक",
+                buses: "बस",
+                trucks: "ट्रक",
+                total: "कुल",
+                uploadHintSmall: "इस सड़क के लिए वीडियो अपलोड करें",
+                clickToUpload: "अपलोड करने के लिए क्लिक करें या ड्रैग करें",
+                roadPreviewLabel: "लाइव लेन फ़ीड",
+                roadLayoutInfo: "सड़क पूर्वावलोकन लेआउट: अपलोड किए गए वीडियो सक्रिय सड़कों से मेल खाते हैं।",
+                totalTrafficLabel: "कुल ट्रैफ़िक",
+                highestCongestionLabel: "सबसे अधिक भीड़भाड़ वाली सड़क",
+                ambulanceStatusLabel: "अम्बुलेंस प्राथमिकता",
+                noAmbulanceLabel: "कोई अम्बुलेंस नहीं मिली",
+                commandSent: "✅ Arduino को भेजा गया",
+                mockMode: "⚠️ मॉक मोड (कोई हार्डवेयर नहीं)",
+                roadCountOption1: "1 सड़क",
+                roadCountOption2: "2 सड़कें",
+                roadCountOption3: "3 सड़कें",
+                roadCountOption4: "4 सड़कें"
+            },
+            bn: {
+                adminLogin: "প্রশাসক লগইন",
+                idPlaceholder: "আইডি",
+                passPlaceholder: "পাসওয়ার্ড",
+                sysIdPlaceholder: "ট্রাফিক সিস্টেম আইডি / রাস্তা",
+                loginBtn: "যোগাযোগ",
+                dashboardTitle: "🚦 স্মার্ট ট্রাফিক নিয়ন্ত্রণ সিস্টেম",
+                dashboardSub: "অ্যাম্বুলেন্স অগ্রাধিকারের সাথে মাল্টি‑রোড ইন্টারসেকশন",
+                statusOperational: "🟢 সিস্টেম কার্যকরী",
+                version: "ভার্সন 3.1 (মাল্টি‑রোড)",
+                temporalConf: "অস্থায়ী নিশ্চিতকরণ সক্ষম",
+                intersectionConfig: "🚧 ইন্টারসেকশন কনফিগারেশন",
+                numRoadsLabel: "রাস্তাগুলির সংখ্যা (1‑4)",
+                uploadHint: "প্রতিটি রাস্তায় একটি ভিডিও আপলোড করুন। ক্রম রাস্তার আইডির সাথে মেলে।",
+                analyzeBtn: "ইন্টারসেকশন বিশ্লেষণ",
+                loading: "লোড হচ্ছে...",
+                analyzing: "ভিডিও বিশ্লেষণ করা হচ্ছে... এটি কিছু সময় নিতে পারে।",
+                intersectionAnalysis: "📊 এআই সুপারিশ এবং বিশ্লেষণ",
+                selectedRoadLabel: "নির্বাচিত সড়ক",
+                arduinoCommandLabel: "Arduino-এ পাঠানো কমান্ড",
+                viewRaw: "কাঁচা প্রতিক্রিয়া দেখুন",
+                footer: "© 2025 স্মার্ট ট্রাফিক বিশ্লেষণ — মাল্টি‑রোড অস্থায়ী নিশ্চিতকরণ v3.1",
+                road: "রাস্তা",
+                noData: "কোন রাস্তার ডেটা উপলব্ধ নেই",
+                ambulance: "অ্যাম্বুলেন্স",
+                noAmbulance: "✅ কোন অ্যাম্বুলেন্স নেই",
+                trafficLevel: "ট্রাফিক স্তর",
+                cars: "গাড়ি",
+                bikes: "বাইক",
+                buses: "বাস",
+                trucks: "ট্রাক",
+                total: "মোট",
+                uploadHintSmall: "এই রাস্তাটির জন্য ভিডিও আপলোড করুন",
+                clickToUpload: "আপলোড করতে ক্লিক করুন বা টেনে আনুন",
+                roadPreviewLabel: "লাইভ লেন ফিড",
+                roadLayoutInfo: "রোড প্রিভিউ লেআউট: আপলোড করা ভিডিও সক্রিয় রাস্তাগুলির সাথে সারিবদ্ধ।",
+                totalTrafficLabel: "মোট ট্রাফিক",
+                highestCongestionLabel: "সর্বোচ্চ জ্যামযুক্ত রোড",
+                ambulanceStatusLabel: "অ্যাম্বুলেন্স অগ্রাধিকার",
+                noAmbulanceLabel: "কোন অ্যাম্বুলেন্স সনাক্ত করা হয়নি",
+                commandSent: "✅ Arduino-এ পাঠানো হয়েছে",
+                mockMode: "⚠️ মক মোড (কোন হার্ডওয়্যার নেই)",
+                roadCountOption1: "1 রাস্তা",
+                roadCountOption2: "2 রাস্তা",
+                roadCountOption3: "3 রাস্তা",
+                roadCountOption4: "4 রাস্তা"
+            },
+            kn: {
+                adminLogin: "ನಿರ್ವಾಹಕ ಲಾಗಿನ್",
+                idPlaceholder: "ಐಡಿ",
+                passPlaceholder: "ಪಾಸ್‌ವರ್ಡ್",
+                sysIdPlaceholder: "ಟ್ರಾಫಿಕ್ ಸಿಸ್ಟಮ್ ಐಡಿ / ರಸ್ತೆ",
+                loginBtn: "ಕನೆಕ್ಟ್ ಮಾಡಿ",
+                dashboardTitle: "🚦 ಸ್ಮಾರ್ಟ್ ಟ್ರಾಫಿಕ್ ನಿಯಂತ್ರಣ ವ್ಯವಸ್ಥೆ",
+                dashboardSub: "ಆಂಬುಲೆನ್ಸ್ ಆದ್ಯತೆಯೊಂದಿಗೆ ಬಹು-ರೋಡ್ ಅಪಾರ್ಥ",
+                statusOperational: "🟢 ವ್ಯವಸ್ಥೆ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿದೆ",
+                version: "ಆವೃತ್ತಿ 3.1 (ಮಲ್ಟಿ‑ರೋಡ್)",
+                temporalConf: "ತಾತ್ಕಾಲಿಕ ದೃಢೀಕರಣ ಸಕ್ರಿಯವಾಗಿದೆ",
+                intersectionConfig: "🚧 ಅಪಾರ್ಥ ಸಂರಚನೆ",
+                numRoadsLabel: "ರಸ್ತೆಗಳ ಸಂಖ್ಯೆ (1‑4)",
+                uploadHint: "ಪ್ರತಿ ರಸ್ತೆಗೆ ಒಂದು ವಿಡಿಯೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ. ಕ್ರಮ ರಸ್ತೆ ಐಡಿಯನ್ನು ಅನುಸರಿಸುತ್ತದೆ.",
+                analyzeBtn: "ಅಪಾರ್ಥ ವಿಶ್ಲೇಷಿಸಿ",
+                loading: "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+                analyzing: "ವೀಡಿಯೊಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ... ಇದಕ್ಕೆ ಕೆಲವು ಕ್ಷಣಗಳು ಬೇಕಾಗಬಹುದು.",
+                intersectionAnalysis: "📊 ಎಐ ಶಿಫಾರಸುಗಳು ಮತ್ತು ವಿಶ್ಲೇಷಣೆ",
+                selectedRoadLabel: "ತேரಿದ ರಸ್ತೆ",
+                arduinoCommandLabel: "Arduinoಗೆ ಕಳುಹಿಸಿದ ಕಮಾನ್‌ಡ್",
+                viewRaw: "ಕಚ್ಚಾ ಪ್ರತಿಕ್ರಿಯೆ ನೋಡಿ",
+                footer: "© 2025 ಸ್ಮಾರ್ಟ್ ಟ್ರಾಫಿಕ್ ವಿಶ್ಲೇಷಣೆ — ಮಲ್ಟಿ‑ರೋಡ್ ತಾತ್ಕಾಲಿಕ ದೃಢೀಕರಣ v3.1",
+                road: "ರಸ್ತೆ",
+                noData: "ಯಾವುದೇ ರಸ್ತೆ ಡೇಟಾ ಲಭ್ಯವಿಲ್ಲ",
+                ambulance: "ಆಂಬುಲೆನ್ಸ್",
+                noAmbulance: "✅ ಆಂಬುಲೆನ್ಸ್ ಇಲ್ಲ",
+                trafficLevel: "ಟ್ರಾಫಿಕ್ ಮಟ್ಟ",
+                cars: "ಕಾರ್ಗಳು",
+                bikes: "ಬೈಕ್‌ಗಳು",
+                buses: "ಬಸ್‌ಗಳು",
+                trucks: "ಟ್ರಕ್‌ಗಳು",
+                total: "ಒಟ್ಟು",
+                uploadHintSmall: "ಈ ರಸ್ತೆಗೆ ವಿಡಿಯೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
+                clickToUpload: "ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಕ್ಲಿಕ್ ಅಥವಾ ಡ್ರ್ಯಾಗ್ ಮಾಡಿ",
+                roadPreviewLabel: "ಲೈವ್ ಲೇನ್ ಫೀಡ್",
+                roadLayoutInfo: "ರೋಡ್ ಪೂರ್ವಾವಲೋಕನ ವಿನ್ಯಾಸ: ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ವಿಡಿಯೋಗಳು ಸಕ್ರಿಯ ರಸ್ತೆಗಳೊಂದಿಗೆ ಸರಿಹೊಂದುತ್ತವೆ.",
+                totalTrafficLabel: "ಒಟ್ಟು ಟ್ರಾಫಿಕ್",
+                highestCongestionLabel: "ಅತ್ಯಧಿಕ ವಾಹನ ಹೆಚ್ಚು ಇರುವ ರಸ್ತೆ",
+                ambulanceStatusLabel: "ಆಂಬುಲೆನ್ಸ್ ಆದ್ಯತೆ",
+                noAmbulanceLabel: "ಅಂಬುಲೆನ್ಸ್ ಕಂಡುಬಂದಿಲ್ಲ",
+                commandSent: "✅ Arduinoಗೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+                mockMode: "⚠️ ಮಾಕ್ ಮೋಡ್ (ಯಾವುದೇ ಹಾರ್ಡ್‌ವೇರ್ ಇಲ್ಲ)",
+                roadCountOption1: "1 ರಸ್ತೆ",
+                roadCountOption2: "2 ರಸ್ತೆಗಳು",
+                roadCountOption3: "3 ರಸ್ತೆಗಳು",
+                roadCountOption4: "4 ರಸ್ತೆ"
+            },
+            ml: {
+                adminLogin: "അഡ്മിൻ ലോഗിൻ",
+                idPlaceholder: "ഐഡി",
+                passPlaceholder: "പാസ്‌വേഡ്",
+                sysIdPlaceholder: "ട്രാഫിക് സിസ്റ്റം ഐഡി / റോഡ്",
+                loginBtn: "കണക്റ്റ് ചെയ്യുക",
+                dashboardTitle: "🚦 സ്മാർട്ട് ട്രാഫിക് കൺട്രോൾ സിസ്റ്റം",
+                dashboardSub: "ആംബുലൻസ് മുൻഗണനയോടെ മൾട്ടി‑റോഡ് ഇൻറർസക്ഷൻ",
+                statusOperational: "🟢 സിസ്റ്റം പ്രവർത്തനക്ഷമമാണ്",
+                version: "ആവൃത്തി 3.1 (മൾട്ടി‑റോഡ്)",
+                temporalConf: "താൽക്കാലിക സ്ഥിരീകരണം സജീവമാണ്",
+                intersectionConfig: "🚧 ഇന്റർസക്ഷൻ കോൺഫിഗറേഷൻ",
+                numRoadsLabel: "റൂട്ടുകളുടെ എണ്ണം (1‑4)",
+                uploadHint: "ഓരോ റോഡിനും ഒരു വീഡിയോ അപ്‌ലോഡ് ചെയ്യുക. ഓർഡർ റോഡ് ഐഡിയിൽ പാരിതോഷികം നൽകുന്നു.",
+                analyzeBtn: "ഇന്റർസക്ഷൻ വിശകലനം ചെയ്യുക",
+                loading: "ലോഡ് ചെയ്തുകൊണ്ട്...",
+                analyzing: "വീഡിയോ വിശകലനം ചെയ്യുന്നു... ഇത് കുറച്ചു സമയം എടുത്തേക്കാം.",
+                intersectionAnalysis: "📊 എഐ ശുപാർശയും വിശകലനവും",
+                selectedRoadLabel: "തിരഞ്ഞെടുത്ത റോഡ്",
+                arduinoCommandLabel: "Arduino-സംയോജിപ്പിച്ച കമാൻഡ്",
+                viewRaw: "റോ പ്രતિક്രിയ കാണുക",
+                footer: "© 2025 സ്മാർട്ട് ട്രാഫിക് വിശകലനം — മൾട്ടി‑റോഡ് താൽക്കാലിക സ്ഥിരീകരണം v3.1",
+                road: "റോഡ്",
+                noData: "റോഡ് ഡാറ്റ ലഭ്യമല്ല",
+                ambulance: "ആംബുലൻസ്",
+                noAmbulance: "✅ ആംബുലൻസ് ഇല്ല",
+                trafficLevel: "ട്രാഫിക് നില",
+                cars: "കാറുകൾ",
+                bikes: "ബൈക്കുകൾ",
+                buses: "ബസ്സുകൾ",
+                trucks: "ട്രക്കുകൾ",
+                total: "മൊത്തം",
+                uploadHintSmall: "ഈ റോഡിന് വീഡിയോ അപ്‌ലോഡ് ചെയ്യുക",
+                clickToUpload: "അപ്‌ലോഡ് ചെയ്യാൻ ക്ലിക്ക് ചെയ്യുക അല്ലെങ്കിൽ ആനുകൂലമാക്കുക",
+                roadPreviewLabel: "ലൈവ് ലെയിൻ ഫീഡ്",
+                roadLayoutInfo: "റോഡ് പ്രിവ്യൂ ലേഔട്ട്: അപ്‌ലോഡ് ചെയ്ത വീഡിയോകൾ സജീവ റോഡുകളുമായി കൃത്യമായി പൊരുത്തപ്പെടുന്നു.",
+                totalTrafficLabel: "മൊത്തം ട്രാഫിക്",
+                highestCongestionLabel: "ഏറ്റവും തിരക്കുള്ള റോഡ്",
+                ambulanceStatusLabel: "ആംബുലൻസ് മുൻഗണന",
+                noAmbulanceLabel: "ആംബുലൻസ് കണ്ടെത്തിയില്ല",
+                commandSent: "✅ Arduino-ക്ക് അയച്ചു",
+                mockMode: "⚠️ മോക് മോഡ് (ഹാർഡ്‌വെയർ ഇല്ല)",
+                roadCountOption1: "1 റോഡ്",
+                roadCountOption2: "2 റോഡ്",
+                roadCountOption3: "3 റോഡ്",
+                roadCountOption4: "4 റോഡ്"
+            },
+            mr: {
+                adminLogin: "प्रशासक लॉगिन",
+                idPlaceholder: "आयडी",
+                passPlaceholder: "पासवर्ड",
+                sysIdPlaceholder: "ट्रॅफिक सिस्टम आयडी / रस्ता",
+                loginBtn: "कनेक्ट करा",
+                dashboardTitle: "🚦 स्मार्ट ट्रॅफिक कंट्रोल सिस्टम",
+                dashboardSub: "अँबुलन्स प्राधान्य सहित मल्टी‑रोड इंटरसेक्शन",
+                statusOperational: "🟢 सिस्टम कार्यरत आहे",
+                version: "आवृत्ती 3.1 (मल्टी‑रोड)",
+                temporalConf: "तात्पुरती पुष्टी सक्षम आहे",
+                intersectionConfig: "🚧 इंटरसेक्शन कॉन्फिगरेशन",
+                numRoadsLabel: "रस्त्यांची संख्या (1‑4)",
+                uploadHint: "प्रत्येक रस्त्यासाठी एक व्हिडिओ अपलोड करा. क्रम रस्ता आयडीशी जुळतो.",
+                analyzeBtn: "इंटरसेक्शनचे विश्लेषण करा",
+                loading: "लोड होत आहे...",
+                analyzing: "व्हिडिओचे विश्लेषण केले जात आहे... याला काही वेळ लागू शकतो.",
+                intersectionAnalysis: "📊 एआय शिफारस आणि विश्लेषण",
+                selectedRoadLabel: "निवडलेला रस्ता",
+                arduinoCommandLabel: "Arduino कडे पाठवलेली कमांड",
+                viewRaw: "कच्चा प्रतिसाद पहा",
+                footer: "© 2025 स्मार्ट ट्रॅफिक विश्लेषण — मल्टी‑रोड तात्पुरती पुष्टी v3.1",
+                road: "रस्ता",
+                noData: "कोणताही रस्ता डेटा उपलब्ध नाही",
+                ambulance: "अँबुलन्स",
+                noAmbulance: "✅ कोणतीही अँबुलन्स नाही",
+                trafficLevel: "ट्रॅफिक पातळी",
+                cars: "कार",
+                bikes: "बाईक",
+                buses: "बस",
+                trucks: "ट्रक",
+                total: "एकूण",
+                uploadHintSmall: "या रस्त्यासाठी व्हिडिओ अपलोड करा",
+                clickToUpload: "अपलोड करण्यासाठी क्लिक करा किंवा ड्रॅग करा",
+                roadPreviewLabel: "लाइव्ह लेन फीड",
+                roadLayoutInfo: "रस्ता प्रीव्यू लेआउट: अपलोड केलेले व्हिडिओ सक्रिय रस्त्यांशी जुळतात.",
+                totalTrafficLabel: "एकूण ट्रॅफिक",
+                highestCongestionLabel: "सर्वात जास्त गर्दी असलेला रस्ता",
+                ambulanceStatusLabel: "अँबुलन्स प्राधान्य",
+                noAmbulanceLabel: "अँबुलन्स आढळली नाही",
+                commandSent: "✅ Arduino कडे पाठवले",
+                mockMode: "⚠️ मॉक मोड (हार्डवेअर नाही)",
+                roadCountOption1: "1 रस्ता",
+                roadCountOption2: "2 रस्ते",
+                roadCountOption3: "3 रस्ते",
+                roadCountOption4: "4 रस्ते"
+            }
+            ,
+            te: {
+                adminLogin: "నిర్వాహక లాగిన్",
+                idPlaceholder: "ID",
+                passPlaceholder: "పాస్వర్డ్",
+                sysIdPlaceholder: "ట్రాఫిక్ సిస్టమ్ ID / రోడ్",
+                loginBtn: "కనెక్ట్ చేయండి",
+                dashboardTitle: "🚦 స్మార్ట్ ట్రాఫిక్ కంట్రోల్ సిస్టమ్",
+                dashboardSub: "బహుళ‑రోడ్ ఖండన అంబులెన్స్ ప్రాధాన్యతతో",
+                statusOperational: "🟢 సిస్టమ్ పనిచేస్తోంది",
+                version: "వెర్షన్ 3.1 (మల్టీ‑రోడ్)",
+                temporalConf: "తాత్కాలిక నిర్ధారణ ప్రారంభించబడింది",
+                intersectionConfig: "🚧 ఖండన కాన్ఫిగరేషన్",
+                numRoadsLabel: "రోడ్ల సంఖ్య (1‑4)",
+                uploadHint: "ఒక్కో రోడ్కు ఒక వీడియో అప్‌లోడ్ చేయండి. క్రమం రోడ్ IDను అనుసరిస్తుంది.",
+                analyzeBtn: "ఖండనను విశ్లేషించండి",
+                loading: "లోడ్ అవుతోంది...",
+                analyzing: "వీడియోలను విశ్లేషిస్తోంది... ఇది కొంత సమయం తీసుకోవచ్చు.",
+                intersectionAnalysis: "📊 ఖండన విశ్లేషణ",
+                selectedRoadLabel: "ఎంచుకున్న రోడ్",
+                arduinoCommandLabel: "Arduinoకి పంపిన ఆదేశం",
+                viewRaw: "ముడి ప్రతిస్పందనను చూడండి",
+                footer: "© 2025 స్మార్ట్ ట్రాఫిక్ విశ్లేషణ — మల్టీ‑రోడ్ తాత్కాలిక నిర్ధారణ v3.1",
+                road: "రోడ్",
+                noData: "రోడ్ డేటా అందుబాటులో లేదు",
+                ambulance: "అంబులెన్స్",
+                noAmbulance: "✅ అంబులెన్స్ లేదు",
+                trafficLevel: "ట్రాఫిక్ స్థాయి",
+                cars: "కార్లు",
+                bikes: "బైక్లు",
+                buses: "బస్సులు",
+                trucks: "ట్రక్కులు",
+                total: "మొత్తం",
+                uploadHintSmall: "ఈ రోడ్డు కోసం వీడియోను అప్‌లోడ్ చేయండి",
+                clickToUpload: "అప్‌లోడ్ చేయడానికి క్లిక్ చేయండి లేదా లాగండి",
+                roadPreviewLabel: "లైవ్ లెన్ ఫీడ్",
+                roadLayoutInfo: "రోడ్ ప్రివ్యూ లేఅవుట్: అప్‌లోడ్ చేసిన వీడియోలు క్రియాశీల రోడ్లతో సరిపోతాయి.",
+                totalTrafficLabel: "మొత్తం ట్రాఫిక్",
+                highestCongestionLabel: "అత్యధిక ట్రాఫిక్ ఉన్న రోడ్",
+                ambulanceStatusLabel: "అంబులెన్స్ ప్రాధాన్యత",
+                noAmbulanceLabel: "అంబులెన్స్ కనిపించలేదు",
+                commandSent: "✅ Arduinoకి పంపబడింది",
+                mockMode: "⚠️ మాక్ మోడ్ (కొందరు హార్డ్‌వేర్ లేదు)",
+                roadCountOption1: "1 రోడ్",
+                roadCountOption2: "2 రోడ్లు",
+                roadCountOption3: "3 రోడ్లు",
+                roadCountOption4: "4 రోడ్లు"
+            }
+        };
+
+        let currentLanguage = 'en';
+
+        function changeLanguage(lang, evt) {
+            currentLanguage = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            const target = evt?.target || window.event?.target;
+            if (target) {
+                target.classList.add('active');
+            }
+            applyTranslations();
+        }
+
+        function updateRoadPreview() {
+            const roadCount = parseInt(document.getElementById('roadCount').value);
+            const previewContainer = document.getElementById('roadPreviewContainer');
+            previewContainer.innerHTML = '';
+
+            for (let i = 1; i <= roadCount; i++) {
+                const previewCard = document.createElement('div');
+                previewCard.className = 'road-preview';
+                previewCard.id = `roadPreview_${i}`;
+                previewCard.innerHTML = `
+                    <div class="fw-bold">${translations[currentLanguage].road} ${i}</div>
+                    <small>${translations[currentLanguage].uploadHintSmall}</small>
+                    <small class="mt-2">${translations[currentLanguage].roadPreviewLabel}</small>
+                `;
+                previewContainer.appendChild(previewCard);
+            }
+        }
+
+        function applyTranslations() {
+            const t = translations[currentLanguage];
+            // Update elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    if (el.tagName === 'INPUT' && el.placeholder !== undefined) {
+                        el.placeholder = t[key];
+                    } else if (el.tagName === 'OPTION') {
+                        el.innerText = t[key];
+                    } else {
+                        el.innerText = t[key];
+                    }
+                }
+            });
+            updateRoadPreview();
+            // Re-translate any generated elements
+            document.querySelectorAll('.road-input').forEach((roadDiv, index) => {
+                const heading = roadDiv.querySelector('h5');
+                const smallHint = roadDiv.querySelector('[data-i18n="uploadHintSmall"]');
+                if (heading) heading.innerText = `${translations[currentLanguage].road} ${index + 1}`;
+                if (smallHint) smallHint.innerText = translations[currentLanguage].uploadHintSmall;
+            });
+        }
+
+        // ==================== LOGIN FUNCTION ====================
+        function login() {
+            const id = document.getElementById('adminId').value;
+            const pass = document.getElementById('adminPass').value;
+            const sysId = document.getElementById('trafficSysId').value;
+            // Simple hardcoded check for demo (any non-empty values accepted)
+            if (id && pass && sysId) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('languageSwitcher').style.display = 'flex';
+                // Apply default language
+                changeLanguage('en');
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // ==================== ORIGINAL SCRIPT (with minor additions for translation) ====================
+        window.onload = function() {
+            updateRoadInputs();
+        };
+
+        function updateRoadInputs() {
+            const roadCount = parseInt(document.getElementById('roadCount').value);
+            const container = document.getElementById('roadInputsContainer');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= roadCount; i++) {
+                const roadDiv = document.createElement('div');
+                roadDiv.className = 'road-input';
+                roadDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">${translations[currentLanguage].road} ${i}</h5>
+                        <small class="text-muted" data-i18n="uploadHintSmall">Upload video for this road</small>
+                    </div>
+                    <div class="upload-area" onclick="document.getElementById('file_road_${i}').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p class="mt-2 mb-0" data-i18n="clickToUpload">Click or drag to upload</p>
+                        <div class="file-name" id="fileName_road_${i}"></div>
+                    </div>
+                    <input type="file" id="file_road_${i}" accept="video/*" style="display: none;" onchange="updateFileName(${i})">
+                `;
+                container.appendChild(roadDiv);
+            }
+            updateRoadPreview();
+            applyTranslations();
+            checkAllFilesSelected();
+        }
+
+        function updateFileName(roadId) {
+            const input = document.getElementById(`file_road_${roadId}`);
+            const fileNameSpan = document.getElementById(`fileName_road_${roadId}`);
+            if (input.files.length > 0) {
+                fileNameSpan.textContent = input.files[0].name;
+            } else {
+                fileNameSpan.textContent = '';
+            }
+            checkAllFilesSelected();
+        }
+
+        function checkAllFilesSelected() {
+            const roadCount = parseInt(document.getElementById('roadCount').value);
+            let allSelected = true;
+            for (let i = 1; i <= roadCount; i++) {
+                const input = document.getElementById(`file_road_${i}`);
+                if (!input || input.files.length === 0) {
+                    allSelected = false;
+                    break;
+                }
+            }
+            document.getElementById('analyzeBtn').disabled = !allSelected;
+        }
+
+        async function analyzeIntersection() {
+            const roadCount = parseInt(document.getElementById('roadCount').value);
+            const formData = new FormData();
+
+            for (let i = 1; i <= roadCount; i++) {
+                const input = document.getElementById(`file_road_${i}`);
+                if (input.files.length > 0) {
+                    formData.append('files', input.files[0]);
+                } else {
+                    alert(`Please select a video for Road ${i}`);
+                    return;
+                }
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const response = await fetch('/analyze-intersection', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                alert('Analysis failed: ' + error.message);
+                console.error(error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = false;
+
+            const selectedRoad = data.selected_road ?? '—';
+            const mode = data.mode ?? 'NORMAL';
+            document.getElementById('selectedRoad').textContent = selectedRoad;
+            document.getElementById('selectedMode').textContent = mode;
+
+            let command = 'No data';
+            if (Array.isArray(data.roads_data) && data.roads_data.length > 0) {
+                const selectedRoadData = data.roads_data.find(r => r.road === selectedRoad) || data.roads_data[0];
+                if (selectedRoadData) {
+                    const roadId = selectedRoadData.road;
+                    const car = selectedRoadData.car ?? 0;
+                    const bike = selectedRoadData.bike ?? 0;
+                    const bus = selectedRoadData.bus ?? 0;
+                    const truck = selectedRoadData.truck ?? 0;
+
+                    if (mode === 'AMBULANCE') {
+                        command = `AMBULANCE,${roadId},${car},${bike},${bus},${truck}`;
+                    } else {
+                        command = `MANUAL,${roadId},GREEN,${car},${bike},${bus},${truck}`;
+                    }
+                }
+            }
+            document.getElementById('arduinoCommand').textContent = command;
+            document.getElementById('commandStatus').textContent = data.command_sent ? translations[currentLanguage].commandSent : translations[currentLanguage].mockMode;
+
+            const summaryCards = document.getElementById('summaryCards');
+            summaryCards.innerHTML = '';
+
+            const totalTraffic = Array.isArray(data.roads_data) ? data.roads_data.reduce((sum, road) => sum + (road.total ?? 0), 0) : 0;
+            const highestRoad = Array.isArray(data.roads_data) ? data.roads_data.reduce((best, road) => {
+                if (!best || (road.total ?? 0) > (best.total ?? 0)) return road;
+                return best;
+            }, null) : null;
+            const ambulanceRoad = Array.isArray(data.roads_data) ? data.roads_data.find(road => road.ambulance) : null;
+
+            const summaries = [
+                {
+                    title: translations[currentLanguage].totalTrafficLabel,
+                    value: totalTraffic,
+                    description: translations[currentLanguage].road + ' ' + (highestRoad ? highestRoad.road : '-')
+                },
+                {
+                    title: translations[currentLanguage].highestCongestionLabel,
+                    value: highestRoad ? `${translations[currentLanguage].road} ${highestRoad.road}` : '-',
+                    description: highestRoad ? `${highestRoad.total ?? 0} ${translations[currentLanguage].total}` : '-'
+                },
+                {
+                    title: translations[currentLanguage].ambulanceStatusLabel,
+                    value: ambulanceRoad ? `${translations[currentLanguage].road} ${ambulanceRoad.road}` : translations[currentLanguage].noAmbulanceLabel,
+                    description: ambulanceRoad ? `${translations[currentLanguage].ambulance} detected` : ''
+                }
+            ];
+
+            summaries.forEach(summary => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4';
+                col.innerHTML = `
+                    <div class="summary-card">
+                        <h6>${summary.title}</h6>
+                        <p class="display-6 fw-bold mb-2">${summary.value}</p>
+                        <p class="small text-muted">${summary.description}</p>
+                    </div>
+                `;
+                summaryCards.appendChild(col);
+            });
+
+            const roadsContainer = document.getElementById('roadsResultsContainer');
+            roadsContainer.innerHTML = '';
+
+            if (Array.isArray(data.roads_data)) {
+                data.roads_data.forEach(road => {
+                    if (!road) return;
+
+                    const isSelected = (road.road === selectedRoad);
+                    const col = document.createElement('div');
+                    col.className = 'col-md-6 col-lg-3';
+
+                    let cardClasses = 'card metric-card h-100';
+                    if (isSelected) cardClasses += ' road-selected';
+
+                    const ambulanceBadge = road.ambulance
+                        ? `<span class="badge bg-danger mb-2"><i class="fas fa-ambulance"></i> ${translations[currentLanguage].ambulance}</span>`
+                        : `<span class="badge bg-success mb-2">${translations[currentLanguage].noAmbulance}</span>`;
+
+                    col.innerHTML = `
+                        <div class="${cardClasses}">
+                            <div class="road-header">${translations[currentLanguage].road} ${road.road} ${isSelected ? '👑' : ''}</div>
+                            ${ambulanceBadge}
+                            <div class="metric-value">${road.level ?? '-'}</div>
+                            <div class="metric-label">${translations[currentLanguage].trafficLevel}</div>
+                            <hr>
+                            <div class="row small">
+                                <div class="col-6">🚗 ${translations[currentLanguage].cars}</div><div class="col-6 text-end">${road.car ?? 0}</div>
+                                <div class="col-6">🏍️ ${translations[currentLanguage].bikes}</div><div class="col-6 text-end">${road.bike ?? 0}</div>
+                                <div class="col-6">🚌 ${translations[currentLanguage].buses}</div><div class="col-6 text-end">${road.bus ?? 0}</div>
+                                <div class="col-6">🚚 ${translations[currentLanguage].trucks}</div><div class="col-6 text-end">${road.truck ?? 0}</div>
+                                <div class="col-6 fw-bold">${translations[currentLanguage].total}</div><div class="col-6 text-end fw-bold">${road.total ?? 0}</div>
+                            </div>
+                        </div>
+                    `;
+                    roadsContainer.appendChild(col);
+                });
+            } else {
+                roadsContainer.innerHTML = `<div class="col-12"><div class="card p-5 text-center">${translations[currentLanguage].noData}</div></div>`;
+            }
+
+            document.getElementById('rawResponse').textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
