@@ -696,7 +696,11 @@ async def analyze_intersection(files: List[UploadFile] = File(...), background_t
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    # FIX: use request as keyword argument (newer Starlette/FastAPI)
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html"
+    )
 
 @app.get("/debug-models")
 async def debug_models():
