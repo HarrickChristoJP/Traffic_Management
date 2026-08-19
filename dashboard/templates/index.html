@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Emergency Traffic Management</title>
+
+    <!-- Leaflet -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #eef1f5;
+            overflow: hidden;
+        }
+
+        /* =========================================
+           HEADER
+        ========================================= */
+
+        .header {
+            height: 64px;
+
+            background: #17202b;
+            color: white;
+
+            display: flex;
+            align-items: center;
+
+            padding: 0 24px;
+
+            font-size: 21px;
+            font-weight: bold;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+
+            position: relative;
+            z-index: 1000;
+        }
+
+        .header-icon {
+            font-size: 27px;
+            margin-right: 10px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .system-status {
+            margin-left: auto;
+
+            display: flex;
+            align-items: center;
+
+            font-size: 13px;
+            font-weight: normal;
+
+            color: #d1d5db;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+
+            background: #22c55e;
+
+            border-radius: 50%;
+
+            margin-right: 7px;
+        }
+
+
+        /* =========================================
+           MAIN LAYOUT
+        ========================================= */
+
+        .main {
+            height: calc(100vh - 64px);
+
+            display: flex;
+        }
+
+
+        /* =========================================
+           SIDEBAR
+        ========================================= */
+
+        .sidebar {
+    width: 450px;
+
+    min-width: 450px;
+
+    background: #f8fafc;
+
+    padding: 22px;
+
+    overflow-y: auto;
+
+    box-shadow: 3px 0 10px rgba(0,0,0,0.15);
+
+    z-index: 900;
+    font-size: 20px;
+}
+
+        .section-title {
+            font-size: 25px;
+            font-weight: bold;
+
+            color: #374151;
+
+            margin-bottom: 12px;
+
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+
+        /* =========================================
+           SELECTED ROUTE CARD
+        ========================================= */
+
+        .selected-card {
+
+            background: #ecfdf5;
+
+            border: 1px solid #86efac;
+
+            border-left: 5px solid #16a34a;
+
+            border-radius: 10px;
+
+            padding: 15px;
+
+            margin-bottom: 18px;
+        }
+
+        .selected-title {
+
+            color: #166534;
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+            margin-bottom: 12px;
+        }
+
+        .selected-route-name {
+
+            font-size: 22px;
+
+            font-weight: bold;
+
+            color: #111827;
+
+            margin-bottom: 12px;
+        }
+
+
+        /* =========================================
+           METRICS
+        ========================================= */
+
+        .metrics {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 9px;
+
+        }
+
+        .metric {
+
+            background: white;
+
+            border-radius: 7px;
+
+            padding: 10px;
+
+            border: 1px solid #e5e7eb;
+        }
+
+        .metric-label {
+
+            font-size: 11px;
+
+            color: #6b7280;
+
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+
+            font-size: 19px;
+
+            font-weight: bold;
+
+            color: #111827;
+        }
+
+
+        /* =========================================
+           ROUTE CARDS
+        ========================================= */
+
+        .route-card {
+
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 14px;
+
+    margin-bottom: 10px;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    font-size: 15px;
+}
+
+.route-card:hover {
+
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+
+    transform: translateY(-1px);
+}
+
+
+.route-card-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 10px;
+}
+
+
+.route-card-header strong {
+
+    font-size: 17px;
+
+    color: #111827;
+}
+
+
+.route-card-info {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 8px;
+}
+
+
+.route-card-info div {
+
+    background: #f8fafc;
+
+    border-radius: 6px;
+
+    padding: 7px;
+}
+
+
+.route-card-info small {
+
+    display: block;
+
+    font-size: 10px;
+
+    color: #64748b;
+
+    margin-bottom: 2px;
+}
+
+
+.route-card-info strong {
+
+    font-size: 14px;
+
+    color: #111827;
+}
+
+
+.blocked-badge {
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+    padding: 3px 7px;
+
+    border-radius: 10px;
+
+    font-size: 9px;
+
+    font-weight: bold;
+}
+
+
+.selected-badge {
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    padding: 3px 7px;
+
+    border-radius: 10px;
+
+    font-size: 9px;
+
+    font-weight: bold;
+}
+
+
+.available-badge {
+
+    background: #fef3c7;
+
+    color: #b45309;
+
+    padding: 3px 7px;
+
+    border-radius: 10px;
+
+    font-size: 9px;
+
+    font-weight: bold;
+}
+        /* =========================================
+           STATUS BADGES
+        ========================================= */
+
+        .badge {
+
+            padding: 4px 8px;
+
+            border-radius: 20px;
+
+            font-size: 10px;
+
+            font-weight: bold;
+        }
+
+        .badge-blocked {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+        }
+
+        .badge-selected {
+
+            background: #dcfce7;
+
+            color: #166534;
+        }
+
+        .badge-available {
+
+            background: #dbeafe;
+
+            color: #1d4ed8;
+        }
+
+
+        /* =========================================
+           ROUTE DETAILS
+        ========================================= */
+
+        .route-details {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 7px;
+
+            font-size: 18px;
+
+            color: #4b5563;
+        }
+
+        .route-detail strong {
+
+            color: #111827;
+        }
+
+
+        /* =========================================
+           BLOCKED ROADS
+        ========================================= */
+
+        .blocked-box {
+
+            margin-top: 17px;
+
+            padding: 13px;
+
+            border-radius: 9px;
+
+            background: #fff7ed;
+
+            border: 1px solid #fed7aa;
+
+        }
+
+        .blocked-title {
+
+            font-size: 19px;
+
+            font-weight: bold;
+
+            color: #9a3412;
+
+            margin-bottom: 8px;
+
+        }
+
+        .blocked-road {
+
+            font-size: 19px;
+
+            color: #7c2d12;
+
+            padding: 4px 0;
+        }
+
+
+        /* =========================================
+           MAP
+        ========================================= */
+
+        .map-container {
+
+            flex: 1;
+
+            position: relative;
+        }
+
+        #map {
+
+            width: 100%;
+
+            height: 100%;
+        }
+
+
+        /* =========================================
+           MAP LEGEND
+        ========================================= */
+
+        .legend {
+
+            position: absolute;
+
+            right: 25px;
+
+            bottom: 30px;
+
+            background: white;
+
+            padding: 18px 22px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 3px 14px rgba(0,0,0,0.25);
+
+            z-index: 500;
+
+            font-size: 16px;
+
+            min-width: 190px;
+        }
+
+        .legend-title {
+
+            font-weight: bold;
+    font-size: 17px;
+    margin-bottom: 12px;
+        }
+
+        .legend-row {
+
+            display: flex;
+
+    align-items: center;
+
+    margin: 9px 0;
+
+    font-size: 15px;
+        }
+
+        .legend-line {
+
+            width: 38px;
+
+            height: 6px;
+
+            margin-right: 10px;
+
+            border-radius: 5px;
+        }
+
+        .legend-blue {
+
+            background: blue;
+        }
+
+        .legend-red {
+
+            background: red;
+        }
+
+        .legend-orange {
+
+            background: orange;
+        }
+
+
+        /* =========================================
+           LOADING
+        ========================================= */
+
+        .loading {
+
+            padding: 20px;
+
+            text-align: center;
+
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+        /* =====================================================
+   ROUTE INPUT
+===================================================== */
+
+.route-input-section {
+    background: white;
+    padding: 16px;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    border: 1px solid #d9dee7;
+}
+
+.route-input-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #344054;
+}
+
+.route-input-section label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475467;
+}
+
+.route-input-section input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #cfd5df;
+    border-radius: 7px;
+    font-size: 14px;
+    outline: none;
+}
+
+.route-input-section input:focus {
+    border-color: #16a34a;
+}
+
+#calculateRouteBtn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 11px;
+    border: none;
+    border-radius: 7px;
+    background: #16a34a;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#calculateRouteBtn:hover {
+    background: #15803d;
+}
+
+#calculateRouteBtn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+#routeStatus {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #475467;
+}
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+
+        @media (max-width: 800px) {
+
+            .sidebar {
+
+                width: 290px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =============================================
+     HEADER
+============================================= -->
+
+<div class="header">
+
+    <div class="header-title">
+
+        <span class="header-icon">
+            🚑
+        </span>
+
+        Emergency Traffic Management
+
+    </div>
+
+
+    <div class="system-status">
+
+        <span class="status-dot"></span>
+
+        System Online
+
+    </div>
+
+</div>
+
+
+
+<!-- =============================================
+     MAIN
+============================================= -->
+
+<div class="main">
+
+
+    <!-- =========================================
+         SIDEBAR
+    ========================================== -->
+
+    <div class="sidebar">
+
+
+        <div class="section-title">
+            Emergency Route Analysis
+        </div>
+
+
+        <!-- =====================================================
+     ROUTE INPUT
+===================================================== -->
+
+<div class="route-input-section">
+
+    <h3>🚑 CALCULATE EMERGENCY ROUTE</h3>
+
+    <label for="startLocation">
+        Start Location
+    </label>
+
+    <input
+        type="text"
+        id="startLocation"
+        placeholder="Enter start location"
+    >
+
+    <label for="destinationLocation">
+        Destination
+    </label>
+
+    <input
+        type="text"
+        id="destinationLocation"
+        placeholder="Enter destination"
+    >
+
+    <button
+        id="calculateRouteBtn"
+        onclick="calculateEmergencyRoute()"
+    >
+        🚑 Calculate Emergency Route
+    </button>
+
+    <div id="routeStatus"></div>
+
+</div>
+
+
+<!-- =====================================================
+     SELECTED ROUTE
+===================================================== -->
+
+<div
+    id="selected-route-container"
+    class="selected-card"
+    style="display:none;"
+>
+
+    <div class="selected-title">
+        🚑 RECOMMENDED ROUTE
+    </div>
+
+    <div
+        id="selected-route-name"
+        class="selected-route-name"
+    >
+    </div>
+            <div
+                id="selected-route-name"
+                class="selected-route-name"
+            >
+            </div>
+
+            
+            <div class="metrics">
+
+                <div class="metric">
+
+                    <div class="metric-label">
+                        DISTANCE
+                    </div>
+
+                    <div
+                        id="selected-distance"
+                        class="metric-value"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <div class="metric-label">
+                        TIME
+                    </div>
+
+                    <div
+                        id="selected-time"
+                        class="metric-value"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <div class="metric-label">
+                        EXPRESSWAY
+                    </div>
+
+                    <div
+                        id="selected-expressway"
+                        class="metric-value"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <div class="metric-label">
+                        SCORE
+                    </div>
+
+                    <div
+                        id="selected-score"
+                        class="metric-value"
+                    >
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- All Routes -->
+
+        <div class="section-title">
+            Available Routes
+        </div>
+
+
+        <div id="routes-container">
+
+            <div class="loading">
+                Loading route analysis...
+            </div>
+
+        </div>
+
+
+        <!-- Blocked Roads -->
+
+        <div
+            id="blocked-container"
+            class="blocked-box"
+            style="display:none;"
+        >
+
+            <div class="blocked-title">
+
+                🚧 Blocked Roads
+
+            </div>
+
+            <div id="blocked-roads"></div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =========================================
+         MAP
+    ========================================== -->
+
+    <div class="map-container">
+
+        <div id="map"></div>
+
+
+        <!-- Legend -->
+
+        <div class="legend">
+
+            <div class="legend-title">
+                Route Legend
+            </div>
+
+            <div class="legend-row">
+
+                <div class="legend-line legend-blue"></div>
+
+                Selected Route
+
+            </div>
+
+            <div class="legend-row">
+
+                <div class="legend-line legend-red"></div>
+
+                Blocked Route
+
+            </div>
+
+            <div class="legend-row">
+
+                <div class="legend-line legend-orange"></div>
+
+                Available Route
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- Leaflet -->
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
+
+<script>
+
+
+// =================================================
+// CREATE MAP
+// =================================================
+
+const map = L.map("map").setView(
+    [12.9174426, 80.2164902],
+    11
+);
+
+
+// =================================================
+// OPEN STREET MAP
+// =================================================
+
+L.tileLayer(
+
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+    {
+
+        maxZoom: 19,
+
+        attribution:
+            "&copy; OpenStreetMap contributors"
+
+    }
+
+).addTo(map);
+
+
+let routeLayer = null;
+// =================================================
+// LOAD EMERGENCY GEOJSON
+// =================================================
+
+async function loadEmergencyRoutes() {
+
+    try {
+
+        const response = await fetch(
+            "/emergency_routes.geojson?t=" +
+            Date.now()
+        );
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Could not load emergency_routes.geojson"
+            );
+        }
+
+        const data = await response.json();
+
+        console.log(
+            "Emergency analysis loaded:",
+            data
+        );
+        const routesContainer =
+    document.getElementById(
+        "routes-container"
+    );
+
+routesContainer.innerHTML = "";
+data.features.forEach(function(feature) {
+
+    const p = feature.properties;
+
+    const card =
+        document.createElement("div");
+
+    card.className = "route-card";
+
+    card.innerHTML = `
+        <div class="route-card-header">
+
+            <strong>
+                ${p.route_name}
+            </strong>
+
+            <span class="${
+                p.blocked
+                    ? "blocked-badge"
+                    : p.selected
+                        ? "selected-badge"
+                        : "available-badge"
+            }">
+
+                ${
+                    p.blocked
+                        ? "BLOCKED"
+                        : p.selected
+                            ? "SELECTED"
+                            : "AVAILABLE"
+                }
+
+            </span>
+
+        </div>
+
+        <div class="route-card-info">
+
+            <div>
+                <small>Distance</small>
+                <strong>
+                    ${p.distance_km} km
+                </strong>
+            </div>
+
+            <div>
+                <small>Time</small>
+                <strong>
+                    ${p.duration_min} min
+                </strong>
+            </div>
+
+            <div>
+                <small>Expressway</small>
+                <strong>
+                    ${p.expressway_pct}%
+                </strong>
+            </div>
+
+            <div>
+                <small>Score</small>
+                <strong>
+                    ${
+                        p.emergency_score !== null
+                            ? p.emergency_score
+                            : "—"
+                    }
+                </strong>
+            </div>
+
+        </div>
+    `;
+
+    routesContainer.appendChild(card);
+
+});
+// Remove old route layer
+if (routeLayer) {
+    map.removeLayer(routeLayer);
+}
+
+// Create new route layer
+routeLayer = L.geoJSON(
+    data,
+    {
+        style: function(feature) {
+
+            const p = feature.properties;
+
+            if (p.selected === true) {
+
+                return {
+                    color: "blue",
+                    weight: 8,
+                    opacity: 0.9
+                };
+
+            }
+
+            if (p.blocked === true) {
+
+                return {
+                    color: "red",
+                    weight: 6,
+                    opacity: 0.85,
+                    dashArray: "10, 10"
+                };
+
+            }
+
+            return {
+                color: "orange",
+                weight: 6,
+                opacity: 0.85
+            };
+        }
+    }
+);
+
+// Add routes to map
+routeLayer.addTo(map);
+
+// Zoom map to routes
+const bounds = routeLayer.getBounds();
+
+if (bounds.isValid()) {
+
+    map.fitBounds(
+        bounds,
+        {
+            padding: [30, 30]
+        }
+    );
+}
+        console.log("GeoJSON data received successfully.");
+        console.log("Number of routes:", data.features.length);
+
+    } catch (error) {
+
+        console.error(
+            "Emergency route error:",
+            error
+        );
+
+        document.getElementById(
+            "routes-container"
+        ).innerHTML =
+
+            '<div class="loading">' +
+
+            '❌ Could not load emergency analysis.' +
+
+            '</div>';
+    }
+}
+loadEmergencyRoutes();
+
+// =====================================================
+// CALCULATE EMERGENCY ROUTE
+// =====================================================
+
+async function calculateEmergencyRoute() {
+
+    const start =
+        document.getElementById(
+            "startLocation"
+        ).value.trim();
+
+    const destination =
+        document.getElementById(
+            "destinationLocation"
+        ).value.trim();
+
+    const button =
+        document.getElementById(
+            "calculateRouteBtn"
+        );
+
+    const status =
+        document.getElementById(
+            "routeStatus"
+        );
+
+
+    // -----------------------------------------------
+    // Validate
+    // -----------------------------------------------
+
+    if (!start) {
+
+        status.innerText =
+            "Please enter a start location.";
+
+        return;
+    }
+
+    if (!destination) {
+
+        status.innerText =
+            "Please enter a destination.";
+
+        return;
+    }
+
+
+    // -----------------------------------------------
+    // Loading state
+    // -----------------------------------------------
+
+    button.disabled = true;
+
+    button.innerText =
+        "🚑 Calculating...";
+
+    status.innerText =
+        "Finding best emergency route...";
+
+
+    try {
+
+        // -------------------------------------------
+        // Send request to Flask
+        // -------------------------------------------
+
+        const response = await fetch(
+            "/calculate-route",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    start: start,
+
+                    destination: destination
+                })
+            }
+        );
+
+
+        const result =
+            await response.json();
+
+
+        // -------------------------------------------
+        // Error
+        // -------------------------------------------
+
+        if (!result.success) {
+
+            status.innerText =
+                "❌ " +
+                result.error;
+
+            return;
+        }
+
+
+        // -------------------------------------------
+        // Success
+        // -------------------------------------------
+
+        status.innerText =
+            "✅ Emergency route calculated!";
+
+
+        console.log(
+            "Selected route:",
+            result.selected_route
+        );
+
+
+        // -------------------------------------------
+        // Refresh GeoJSON/map
+        // -------------------------------------------
+
+        if (
+            typeof loadEmergencyRoutes ===
+            "function"
+        ) {
+
+            loadEmergencyRoutes();
+
+        } else {
+
+            // Simple fallback:
+            // reload the dashboard
+
+            window.location.reload();
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.innerText =
+            "❌ Unable to calculate route.";
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerText =
+            "🚑 Calculate Emergency Route";
+    }
+}
+</script>
+
+
+</body>
+
+</html>
