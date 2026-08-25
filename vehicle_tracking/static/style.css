@@ -1,0 +1,141 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.dashboard {
+    display: flex;
+    height: 100vh;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+    width: 350px;
+    padding: 25px;
+    background: white;
+    border-right: 1px solid #d1d5db;
+    z-index: 1000;
+}
+
+.sidebar h1 {
+    margin-top: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sidebar p {
+    color: #6b7280;
+    line-height: 1.5;
+    font-size: 15px;
+}
+
+/* =========================
+   INPUT SECTION
+========================= */
+
+.input-section {
+    margin-top: 30px;
+}
+
+.input-section label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #1f2937;
+}
+
+.input-section input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+.input-section input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.input-section button {
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+}
+
+.input-section button:hover {
+    background: #1d4ed8;
+}
+
+/* =========================
+   MAP
+========================= */
+
+#map {
+    flex: 1;
+}
+
+/* =========================
+   SIGNAL LABELS
+========================= */
+
+.signal-label {
+    background: white;
+    border: 2px solid #374151;
+    border-radius: 6px;
+    padding: 6px 10px;
+
+    font-size: 16px !important;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+    color: #111827;
+
+    white-space: nowrap;
+}
+
+/* START label */
+
+.signal-label.start {
+    background: #dcfce7;
+    border-color: #16a34a;
+    color: #166534;
+}
+
+/* END label */
+
+.signal-label.end {
+    background: #fee2e2;
+    border-color: #dc2626;
+    color: #991b1b;
+}
+
+/* S1, S2, S3... labels */
+
+.signal-label.s1,
+.signal-label.s2,
+.signal-label.s3,
+.signal-label.s4,
+.signal-label.s5,
+.signal-label.s6,
+.signal-label.s7,
+.signal-label.s8,
+.signal-label.s9 {
+    background: #dbeafe;
+    border-color: #2563eb;
+    color: #1e3a8a;
+}
