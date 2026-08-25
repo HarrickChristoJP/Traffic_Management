@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Vehicle Tracking System</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <!-- Our CSS -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+    <div class="dashboard">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+
+            <h1>Vehicle Tracking</h1>
+
+            <p>
+                Track vehicle movement across
+                multiple traffic signals
+            </p>
+
+            <div class="input-section">
+
+                <label>
+                    Vehicle Number
+                </label>
+
+            <input
+    type="text"
+    id="vehicle-number"
+    placeholder="Example: TN09AB1234"
+>
+
+<button id="track-button">
+    Track Vehicle
+</button>    
+            </div>
+
+        </div>
+
+
+        <!-- Map -->
+        <div id="map"></div>
+
+    </div>
+
+
+    <!-- Leaflet JS -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+
+    <!-- Our JavaScript -->
+    <script
+        src="{{ url_for('static', filename='script.js') }}"
+    ></script>
+
+</body>
+
+</html>
