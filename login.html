@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Traffic Management System | Officer Login</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="background-overlay"></div>
+
+  <div class="login-container">
+
+    <div class="login-card">
+
+      <!-- Header -->
+      <div class="header">
+
+        <div class="logo-circle">
+          
+        </div>
+
+        <h1>Smart Traffic Management</h1>
+        <p>Traffic Officer Login Portal</p>/n
+
+      </div>
+
+      <!-- Login Form -->
+      <div class="form">
+
+        <label for="signalID">Traffic Signal ID</label>
+        <input
+          type="text"
+          id="signalID"
+          placeholder="Enter Traffic Signal ID"
+          autocomplete="off"
+        >
+
+        <label for="officerID">Officer ID</label>
+        <input
+          type="text"
+          id="officerID"
+          placeholder="Enter Officer ID"
+          autocomplete="off"
+        >
+
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter Password"
+        >
+
+        <button id="loginBtn">
+          Login
+        </button>
+
+        <!-- Status Message -->
+        <p id="message"></p>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>Authorized Personnel Only</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- JavaScript -->
+  <script type="module" src="app.js"></script>
+
+</body>
+
+</html>
